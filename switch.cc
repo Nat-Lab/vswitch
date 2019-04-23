@@ -1,12 +1,10 @@
 #include "switch.h"
-#include <thread>
 #include <stdio.h>
 #include <unistd.h>
 
 void Switch::Plug(Port *port) {
     fprintf(stderr, "[INFO] Switch::Forward: plugging in port %d.\n", port->GetId());
-    std::thread listener_thread (&Switch::Listener, this, port);
-    listener_thread.detach();
+    listener_threads.push_back(std::thread(&Switch::Listener, this, port));
 }
 
 void Switch::Unplug(Port *port) {
@@ -24,8 +22,7 @@ void Switch::Unplug(Port *port) {
 void Switch::AddPortEnumerator(PortEnumerator *penum) {
     fprintf(stderr, "[INFO] Switch::AddPortEnumerator: adding '%s'.\n", penum->GetName());
     penum->Start();
-    std::thread enum_thread (&Switch::EnumeratorHandler, this, penum);
-    enum_thread.detach();
+    enum_threads.push_back(std::thread(&Switch::EnumeratorHandler, this, penum));
 }
 
 void Switch::Forward(Port *src_port, const uint8_t *buffer, size_t buf_len) {
@@ -95,4 +92,13 @@ void Switch::EnumeratorHandler(PortEnumerator *pe) {
     Port *p = 0;
     while ((p = pe->GetPort()) != 0) Plug(p);
     fprintf(stderr, "[WARN] Switch::EnumeratorHandler: Enumerator '%s' stopped.\n", pe->GetName());
+}
+
+void Switch::Join() {
+    for (auto &t : listener_threads) {
+        if (t.joinable()) t.join();
+    }
+    for (auto &t : enum_threads) {
+        if (t.joinable()) t.join();
+    }
 }

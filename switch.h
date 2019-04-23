@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <vector>
 #include <mutex>
+#include <thread>
 
 #include "fdb-entry.h"
 #include "port.h"
@@ -22,6 +23,9 @@ public:
 
     // unplug all ports & stop
     void Shutdown();
+
+    // join switch thread
+    void Join();
 private:
     // forward traffic to other ports
     void Forward(Port *src_port, const uint8_t *buffer, size_t buf_len);
@@ -32,6 +36,9 @@ private:
     // handle port add for PortEnumerator.
     void EnumeratorHandler (PortEnumerator *penum);
 
+    std::vector<std::thread> listener_threads;
+    std::vector<std::thread> enum_threads;
+    std::vector<PortEnumerator *> enums;
     std::vector<FdbEntry> fdb;
     std::mutex mtx;
 };
