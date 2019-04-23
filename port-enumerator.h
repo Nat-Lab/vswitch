@@ -10,10 +10,10 @@
 class PortEnumerator {
 public:
     // Start: start the enumerator
-    virtual void Start() = 0;
+    virtual bool Start() = 0;
 
     // Stop: stop the enumerator
-    virtual void Stop() = 0;
+    virtual bool Stop() = 0;
 
     // GetPort: get a port. Block if no new port avaliable.
     virtual Port* GetPort(void) = 0;
