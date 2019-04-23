@@ -23,6 +23,7 @@ void Switch::Unplug(Port *port) {
 
 void Switch::AddPortEnumerator(PortEnumerator *penum) {
     fprintf(stderr, "[INFO] Switch::AddPortEnumerator: adding '%s'.\n", penum->GetName());
+    penum->Start();
     std::thread enum_thread (&Switch::EnumeratorHandler, this, penum);
     enum_thread.detach();
 }
