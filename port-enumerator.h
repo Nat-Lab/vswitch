@@ -11,6 +11,10 @@ class PortEnumerator {
 public:
     // GetPort: get a port. Block if no new port avaliable.
     virtual Port* GetPort(void) = 0;
+
+    // GetName: get the name of enumerator
+    virtual const char* GetName(void) = 0;
+    
     virtual ~PortEnumerator() {};
 };
 
