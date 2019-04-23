@@ -6,11 +6,15 @@
 
 class Port {
 public:
-    virtual ssize_t Read(uint8_t *buffer, size_t len) = 0;
-    virtual ssize_t Write(const uint8_t *buffer, size_t len) = 0;
-    virtual int Close() = 0;
-    virtual int GetId(void) const = 0;
+    Port();
+    Port(int fd); 
+    virtual ssize_t Read(uint8_t *buffer, size_t len);
+    virtual ssize_t Write(const uint8_t *buffer, size_t len);
+    virtual int Close();
+    virtual int GetId(void) const;
     virtual ~Port() {}
+private:
+    int port_fd;
 };
 
 #endif // PORT_H
