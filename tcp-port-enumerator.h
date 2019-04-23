@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-class TcpPortEnumerator : PortEnumerator {
+class TcpPortEnumerator : public PortEnumerator {
 public:
     TcpPortEnumerator(const char *server_addr, in_port_t port);
     bool Start();
