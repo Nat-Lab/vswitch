@@ -5,7 +5,7 @@
 
 class TapPort : public Port {
 public:
-    TapPort(char *dev_name);
+    TapPort(const char *dev_name);
     ssize_t Read(uint8_t *buffer, size_t len);
     ssize_t Write(const uint8_t *buffer, size_t len);
     int Close();

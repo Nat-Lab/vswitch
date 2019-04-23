@@ -14,7 +14,7 @@
 #include <linux/if.h>
 #include <linux/if_tun.h>
 
-TapPort::TapPort(char *dev_name) {
+TapPort::TapPort(const char *dev_name) {
     tap_name = (char *) malloc(IFNAMSIZ);
     const char *tun_dev = "/dev/net/tun";
     
