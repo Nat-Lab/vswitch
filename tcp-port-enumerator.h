@@ -22,6 +22,7 @@ private:
     int master_fd;
     struct sockaddr_in listen_addr;
     std::vector<Port *> ports;
+    char *this_name;
 };
 
 #endif // TCP_PORT_ENUM_H

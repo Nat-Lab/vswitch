@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
 
 TcpPortEnumerator::TcpPortEnumerator(const char *server_addr, in_port_t port) {
 	memset(&listen_addr, 0, sizeof(struct sockaddr_in));
@@ -10,6 +11,8 @@ TcpPortEnumerator::TcpPortEnumerator(const char *server_addr, in_port_t port) {
 	listen_addr.sin_port = htons(port);
 	inet_pton(AF_INET, server_addr, &(listen_addr.sin_addr));
 	master_fd = -1;
+	this_name = (char *) malloc(64);
+	sprintf(this_name, "TcpPortEnumerator@%s:%d", server_addr, port);
 }
 
 bool TcpPortEnumerator::Start () {
@@ -76,9 +79,10 @@ Port* TcpPortEnumerator::GetPort(void) {
 }
 
 const char* TcpPortEnumerator::GetName(void) {
-	return "TcpPortEnumerator";
+	return this_name;
 }
 
 TcpPortEnumerator::~TcpPortEnumerator() {
+	delete this_name;
 	Stop();
 }
