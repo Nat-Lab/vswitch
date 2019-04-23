@@ -19,6 +19,9 @@ public:
 
     // add a port enumerator to switch
     void AddPortEnumerator(PortEnumerator *penum);
+
+    // unplug all ports & stop
+    void Shutdown();
 private:
     // forward traffic to other ports
     void Forward(Port *src_port, const uint8_t *buffer, size_t buf_len);
