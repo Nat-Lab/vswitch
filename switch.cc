@@ -20,6 +20,11 @@ void Switch::Unplug(Port *port) {
     fprintf(stderr, "[INFO] Switch::Unplug: unplugged port %d.\n", port->GetId());
 }
 
+void Switch::AddPortEnumerator(PortEnumerator *penum) {
+    fprintf(stderr, "[INFO] Switch::AddPortEnumerator: adding '%s'.\n", penum->GetName());
+    std::thread enum_thread (&Switch::EnumeratorHandler, this, penum);
+}
+
 void Switch::Forward(Port *src_port, const uint8_t *buffer, size_t buf_len) {
     auto eth_hdr = (const struct ether_header *) buffer;
     auto eth_addr = (const uint16_t *) eth_hdr->ether_dhost;
@@ -41,7 +46,6 @@ void Switch::Forward(Port *src_port, const uint8_t *buffer, size_t buf_len) {
         mtx.unlock();
         return;
     }
-
 
     mtx.lock();
     auto fdb_it = fdb.begin();
@@ -82,4 +86,9 @@ void Switch::Listener(Port *port) {
 forward:
         Forward(port, buffer, (size_t) len);
     }
+}
+
+void Switch::EnumeratorHandler(PortEnumerator *pe) {
+    Port *p = 0;
+    while ((p = pe->GetPort()) != 0) Plug(p);
 }
