@@ -9,12 +9,18 @@
 // can't be generated until the client is connected.
 class PortEnumerator {
 public:
+    // Start: start the enumerator
+    virtual void Start() = 0;
+
+    // Stop: stop the enumerator
+    virtual void Stop() = 0;
+
     // GetPort: get a port. Block if no new port avaliable.
     virtual Port* GetPort(void) = 0;
 
     // GetName: get the name of enumerator
     virtual const char* GetName(void) = 0;
-    
+
     virtual ~PortEnumerator() {};
 };
 
