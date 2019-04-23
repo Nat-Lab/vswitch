@@ -94,4 +94,5 @@ forward:
 void Switch::EnumeratorHandler(PortEnumerator *pe) {
     Port *p = 0;
     while ((p = pe->GetPort()) != 0) Plug(p);
+    fprintf(stderr, "[WARN] Switch::EnumeratorHandler: Enumerator '%s' stopped.\n", pe->GetName());
 }
