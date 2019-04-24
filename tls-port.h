@@ -17,6 +17,7 @@ public:
 private:
     SSL *ssl;
     int id;
+    uint8_t *send_buffer;
 };
 
 #endif // TLS_PORT_H
