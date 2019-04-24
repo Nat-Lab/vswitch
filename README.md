@@ -53,6 +53,37 @@ To connect to the TLS switch extension with `client-tls`, use the following argu
 # ./client-tls -d tap-client -s 172.30.0.1 -p 1443 -n server-name.local -C certs/ca.crt -c certs/client.crt -k certs/client.key
 ```
 
+### Development
+
+Adding new protocol support to vSwitch is simple. What you need is to implement a `Port` and/or a `PortEnumerator`. The definition of these two interfaces can be found in `server/port-enumerator.h` and `server/port.h`. 
+
+Once you have your Port created, you can use it with vSwitch. The `vswitch` binary is just a CLI wrapper. To create a vSwitch programmatically, create a `Switch` instance, then use `Switch::AddPortEnumerator` or `Switch::Plug` to have `PortEnumerator` or `Port` install to the switch. 
+
+Here's an example that creates a simple vSwitch with TCP and TAP port:
+
+```C++
+#include "switch.h"
+#include "tap-port.h"
+#include "tcp-port-enumerator.h"
+
+int main (int argc, char **argv) {
+    Switch s;
+    TapPort tap ("dev-vswitch");
+    TcpPortEnumerator tcp ("0.0.0.0", 1234);
+
+    // add TcpPortEnumerator to switch
+    s.AddPortEnumerator(&tcp);
+
+    // plug tap interface into switch
+    s.Plug(&tap);
+
+    // join the switching thread.
+    s.Join();
+
+    return 0;
+}
+```
+
 ### License
 
 MIT
