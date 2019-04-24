@@ -149,7 +149,7 @@ void print_help (const char *me) {
 
 int main (int argc, char **argv) {
     char *tap_name = (char *) malloc(IFNAMSIZ);
-    char *server_addr = (char *) malloc(12);
+    char *server_addr = (char *) malloc(16);
 	char *ca_path = (char *) malloc(PATH_MAX);
 	char *cert_path = (char *) malloc(PATH_MAX);
 	char *cert_key_path = (char *) malloc(PATH_MAX);
@@ -202,7 +202,7 @@ int main (int argc, char **argv) {
                 break;
 			case 'n':
 				n = true;
-				strncpy(server_name, optarg, 64);
+				strncpy(server_name, optarg, 16);
                 break;
             default:
                 print_help (argv[0]);

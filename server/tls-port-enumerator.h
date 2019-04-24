@@ -12,19 +12,19 @@
 
 class TlsPortEnumerator : public PortEnumerator {
 public:
-	TlsPortEnumerator(const char *ca_path, const char *server_crt, const char *server_key,
-					  const char *bind_addr, in_port_t bind_port);
-	bool Start();
+    TlsPortEnumerator(const char *ca_path, const char *server_crt, const char *server_key,
+                      const char *bind_addr, in_port_t bind_port);
+    bool Start();
     bool Stop();
     Port* GetPort(void);
     const char* GetName(void);
-	~TlsPortEnumerator();
+    ~TlsPortEnumerator();
 private:
-	SSL_CTX *ssl_ctx;
-	int master_fd;
-	struct sockaddr_in listen_addr;
-	char *this_name;
-	std::vector<TlsPort *> ports;
+    SSL_CTX *ssl_ctx;
+    int master_fd;
+    struct sockaddr_in listen_addr;
+    char *this_name;
+    std::vector<TlsPort *> ports;
 };
 
 #endif // TLS_PORT_ENUM_H
