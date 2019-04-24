@@ -9,10 +9,10 @@ all: $(TARGETS)
 bin:
 	mkdir -p bin
 
-bin/client-tcp: bin
+bin/client-tcp: bin client/client-tcp.cc
 	$(CC) -o bin/client-tcp client/client-tcp.cc $(CFLAGS)
 
-bin/client-tls: bin
+bin/client-tls: bin client/client-tls.cc
 	$(CC) -o bin/client-tls client/client-tls.cc $(CFLAGS)
 
 bin/vswitch: bin $(OBJS_SERVER)
