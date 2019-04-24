@@ -202,7 +202,7 @@ int main (int argc, char **argv) {
                 break;
 			case 'n':
 				n = true;
-				strncpy(server_name, optarg, 16);
+				strncpy(server_name, optarg, 64);
                 break;
             default:
                 print_help (argv[0]);
@@ -222,23 +222,23 @@ int main (int argc, char **argv) {
     }
     fprintf(stderr, "[INFO] tap_alloc: allocated: %s.\n", tap_name);
 
-    if (setgid (gid) != 0) {
-        fprintf(stderr, "[CRIT] failed to drop root privilege: setgid(): %s.\n", strerror(errno));
-        return 1;
-    }
-    fprintf(stderr, "[INFO] gid is now: %d.\n", gid);
-
-    if (setuid (uid) != 0) {
-        fprintf(stderr, "[CRIT] failed to drop root privilege: setuid(): %s.\n", strerror(errno));
-        return 1;
-    }
-    fprintf(stderr, "[INFO] uid is now: %d.\n", uid);
-
 	SSL *ssl = ssl_init(ca_path, cert_path, cert_key_path, server_name);
 	if (ssl == 0) {
 		fprintf(stderr, "[CRIT] ssl_init error.\n");
         return 1;
 	}
+
+    if (setgid (gid) != 0) {
+        fprintf(stderr, "[CRIT] setgid(): %s.\n", strerror(errno));
+        return 1;
+    }
+    fprintf(stderr, "[INFO] gid is now: %d.\n", gid);
+
+    if (setuid (uid) != 0) {
+        fprintf(stderr, "[CRIT] setuid(): %s.\n", strerror(errno));
+        return 1;
+    }
+    fprintf(stderr, "[INFO] uid is now: %d.\n", uid);
 
     int sock_fd = server_connect(server_addr, server_port);
     if (sock_fd < 0) {
