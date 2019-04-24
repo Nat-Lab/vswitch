@@ -24,7 +24,7 @@ const char *bind_addr, in_port_t bind_port) {
     }
 
     SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, NULL);
-    
+
     if (!SSL_CTX_load_verify_locations(ssl_ctx, ca_path, NULL)) {
         fprintf(stderr, "[CRIT] SSL_CTX_load_verify_locations error:\n");
         ERR_print_errors_fp(stderr);
@@ -134,6 +134,14 @@ Port* TlsPortEnumerator::GetPort(void) {
         }
 
         fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: TLS session established.\n");
+        X509 *cert = SSL_get_peer_certificate(ssl);
+        char *line;
+        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+        fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: subject_name: %s.\n", line);
+        OPENSSL_free(line);
+        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+        fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: issuer: %s.\n", line);
+        OPENSSL_free(line);
 
         TlsPort *p = new TlsPort(ssl, client_fd);
         ports.push_back(p);
