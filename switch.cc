@@ -1,9 +1,10 @@
 #include "switch.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <netinet/ether.h>
 
 void Switch::Plug(Port *port) {
-    fprintf(stderr, "[INFO] Switch::Forward: plugging in port %d.\n", port->GetId());
+    fprintf(stderr, "[INFO] Switch::Plug: plugging in port %d.\n", port->GetId());
     listener_threads.push_back(std::thread(&Switch::Listener, this, port));
 }
 
@@ -41,11 +42,12 @@ void Switch::Forward(Port *src_port, const uint8_t *buffer, size_t buf_len) {
                     fprintf(stderr, "[WARN] Switch::Forward: writing to port %d failed, remove from fdb.\n", port->GetId());
                     fdb.erase(fdb_it);
                 } else fdb_it++;
-            }
+            } else fdb_it++;
         }
         mtx.unlock();
         return;
     }
+    mtx.unlock();
 
     mtx.lock();
     auto fdb_it = fdb.begin();
@@ -57,7 +59,7 @@ void Switch::Forward(Port *src_port, const uint8_t *buffer, size_t buf_len) {
                 fprintf(stderr, "[WARN] Switch::Forward: writing to port %d failed, remove from fdb.\n", port->GetId());
                 fdb.erase(fdb_it);
             } else fdb_it++;
-        }
+        } else fdb_it++;
     }
     mtx.unlock();
 }
@@ -65,6 +67,7 @@ void Switch::Forward(Port *src_port, const uint8_t *buffer, size_t buf_len) {
 void Switch::Listener(Port *port) {
     ssize_t len = -1;
     uint8_t *buffer = (uint8_t *) malloc(65536);
+    char* addr_str;
     while ((len = port->Read(buffer, 65535)) > 0) {
         if (len <= 0) {
             fprintf(stderr, "[WARN] Switch::Listener: reading from port %d failed, unplug.\n", port->GetId());
@@ -82,6 +85,9 @@ void Switch::Listener(Port *port) {
         mtx.lock();
         fdb.push_back(new_entry);
         mtx.unlock();
+
+        addr_str = ether_ntoa(eth_addr);
+        fprintf(stderr, "[INFO] Switch::Listener: new host: %s @ port %d.\n", addr_str, port->GetId());
 
 forward:
         Forward(port, buffer, (size_t) len);
