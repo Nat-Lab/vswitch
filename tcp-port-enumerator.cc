@@ -52,7 +52,7 @@ bool TcpPortEnumerator::Stop () {
 	ports.clear();
 
 	if (close(master_fd) == 0) return true;
-	fprintf(stderr, "[INFO] TcpPortEnumerator::Stop: close() on %s.\n", strerror(errno));
+	fprintf(stderr, "[INFO] TcpPortEnumerator::Stop: close(): %s.\n", strerror(errno));
 	return false;
 }
 
