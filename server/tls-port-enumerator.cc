@@ -103,6 +103,7 @@ Port* TlsPortEnumerator::GetPort(void) {
             fprintf(stderr, "[CRIT] TlsPortEnumerator::GetPort: SSL_new() error:\n");
             ERR_print_errors_fp(stderr);
             SSL_shutdown(ssl);
+            close(client_fd);
             SSL_free(ssl);
             return 0;
         }
@@ -111,6 +112,7 @@ Port* TlsPortEnumerator::GetPort(void) {
             fprintf(stderr, "[CRIT] TlsPortEnumerator::GetPort: SSL_set_fd() error:\n");
             ERR_print_errors_fp(stderr);
             SSL_shutdown(ssl);
+            close(client_fd);
             SSL_free(ssl);
             return 0;
         }
@@ -121,6 +123,7 @@ Port* TlsPortEnumerator::GetPort(void) {
             fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: SSL_accept() auth failed:\n");
             ERR_print_errors_fp(stderr);
             SSL_shutdown(ssl);
+            close(client_fd);
             SSL_free(ssl);
             continue;
         }
@@ -129,6 +132,7 @@ Port* TlsPortEnumerator::GetPort(void) {
             fprintf(stderr, "[CRIT] TlsPortEnumerator::GetPort: SSL_accept() fatal error:\n");
             ERR_print_errors_fp(stderr);
             SSL_shutdown(ssl);
+            close(client_fd);
             SSL_free(ssl);
             return 0;
         }

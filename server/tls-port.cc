@@ -59,6 +59,7 @@ int TlsPort::Close() {
         fprintf(stderr, "[CRIT] TlsPort::Close: SSL_shutdown() error:\n");
         ERR_print_errors_fp(stderr);
     }
+    close(id);
     return ret;
 }
 
