@@ -38,33 +38,33 @@ SSL* ssl_init (const char *ca_path, const char *cert_path, const char *key_path,
     SSL_load_error_strings();
     SSLeay_add_ssl_algorithms();
 
-	SSL_METHOD *method = (SSL_METHOD *) TLSv1_2_method();
-	SSL_CTX* ctx = SSL_CTX_new(method);
+    SSL_METHOD *method = (SSL_METHOD *) TLSv1_2_method();
+    SSL_CTX* ctx = SSL_CTX_new(method);
 
-	if (!SSL_CTX_use_certificate_file(ctx, cert_path, SSL_FILETYPE_PEM)) {
-		fprintf(stderr, "[CRIT] SSL_CTX_use_certificate_file() error:\n");
-		ERR_print_errors_fp(stderr);
-		return 0;
-	}
-	if (!SSL_CTX_use_PrivateKey_file(ctx, key_path, SSL_FILETYPE_PEM)) {
-		fprintf(stderr, "[CRIT] SSL_CTX_use_PrivateKey_file() error:\n");
-		ERR_print_errors_fp(stderr);
-		return 0;
-	}
-	if (!SSL_CTX_load_verify_locations(ctx, ca_path, NULL)) {
-		fprintf(stderr, "[CRIT] SSL_CTX_load_verify_locations() error:\n");
-		ERR_print_errors_fp(stderr);
-		return 0;
-	}
+    if (!SSL_CTX_use_certificate_file(ctx, cert_path, SSL_FILETYPE_PEM)) {
+        fprintf(stderr, "[CRIT] SSL_CTX_use_certificate_file() error:\n");
+        ERR_print_errors_fp(stderr);
+        return 0;
+    }
+    if (!SSL_CTX_use_PrivateKey_file(ctx, key_path, SSL_FILETYPE_PEM)) {
+        fprintf(stderr, "[CRIT] SSL_CTX_use_PrivateKey_file() error:\n");
+        ERR_print_errors_fp(stderr);
+        return 0;
+    }
+    if (!SSL_CTX_load_verify_locations(ctx, ca_path, NULL)) {
+        fprintf(stderr, "[CRIT] SSL_CTX_load_verify_locations() error:\n");
+        ERR_print_errors_fp(stderr);
+        return 0;
+    }
 
-	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, do_verify);
-	SSL *ssl = SSL_new(ctx);
-	X509_VERIFY_PARAM *vpm = SSL_get0_param(ssl); 
-	if (!X509_VERIFY_PARAM_set1_host(vpm, server_cn, 0)) {
-		fprintf(stderr, "[CRIT] X509_VERIFY_PARAM_set1_host() failed.\n");
-		return 0;
-	};
-	return ssl;
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, do_verify);
+    SSL *ssl = SSL_new(ctx);
+    X509_VERIFY_PARAM *vpm = SSL_get0_param(ssl); 
+    if (!X509_VERIFY_PARAM_set1_host(vpm, server_cn, 0)) {
+        fprintf(stderr, "[CRIT] X509_VERIFY_PARAM_set1_host() failed.\n");
+        return 0;
+    };
+    return ssl;
 }
 
 int tap_alloc (char *dev_name) {
@@ -150,10 +150,10 @@ void print_help (const char *me) {
 int main (int argc, char **argv) {
     char *tap_name = (char *) malloc(IFNAMSIZ);
     char *server_addr = (char *) malloc(16);
-	char *ca_path = (char *) malloc(PATH_MAX);
-	char *cert_path = (char *) malloc(PATH_MAX);
-	char *cert_key_path = (char *) malloc(PATH_MAX);
-	char *server_name = (char *) malloc(64);
+    char *ca_path = (char *) malloc(PATH_MAX);
+    char *cert_path = (char *) malloc(PATH_MAX);
+    char *cert_key_path = (char *) malloc(PATH_MAX);
+    char *server_name = (char *) malloc(64);
     in_port_t server_port = 0;
 
     uid_t uid = 65534;
@@ -162,10 +162,10 @@ int main (int argc, char **argv) {
     bool s = false; 
     bool p = false;
     bool c = false;
-	bool C = false;
+    bool C = false;
     bool d = false;
-	bool n = false;
-	bool k = false;
+    bool n = false;
+    bool k = false;
 
     char opt;
     while ((opt = getopt(argc, argv, "s:p:d:u:g:C:c:k:n:")) != -1) {
@@ -188,21 +188,21 @@ int main (int argc, char **argv) {
             case 'g':
                 gid = atoi (optarg);
                 break;
-			case 'C':
-				C = true;
-				strncpy(ca_path, optarg, PATH_MAX);
+            case 'C':
+                C = true;
+                strncpy(ca_path, optarg, PATH_MAX);
                 break;
-			case 'c':
-				c = true;
-				strncpy(cert_path, optarg, PATH_MAX);
+            case 'c':
+                c = true;
+                strncpy(cert_path, optarg, PATH_MAX);
                 break;
-			case 'k':
-				k = true;
-				strncpy(cert_key_path, optarg, PATH_MAX);
+            case 'k':
+                k = true;
+                strncpy(cert_key_path, optarg, PATH_MAX);
                 break;
-			case 'n':
-				n = true;
-				strncpy(server_name, optarg, 64);
+            case 'n':
+                n = true;
+                strncpy(server_name, optarg, 64);
                 break;
             default:
                 print_help (argv[0]);
@@ -222,11 +222,11 @@ int main (int argc, char **argv) {
     }
     fprintf(stderr, "[INFO] tap_alloc: allocated: %s.\n", tap_name);
 
-	SSL *ssl = ssl_init(ca_path, cert_path, cert_key_path, server_name);
-	if (ssl == 0) {
-		fprintf(stderr, "[CRIT] ssl_init error.\n");
+    SSL *ssl = ssl_init(ca_path, cert_path, cert_key_path, server_name);
+    if (ssl == 0) {
+        fprintf(stderr, "[CRIT] ssl_init error.\n");
         return 1;
-	}
+    }
 
     if (setgid (gid) != 0) {
         fprintf(stderr, "[CRIT] setgid(): %s.\n", strerror(errno));
@@ -247,14 +247,14 @@ int main (int argc, char **argv) {
     }
     fprintf(stderr, "[INFO] server_connect: connected.\n");
 
-	SSL_set_fd(ssl, sock_fd);
-	int conn_ret = SSL_connect(ssl);
-	if (conn_ret <= 0) {
-		fprintf(stderr, "[CRIT] SSL_connect: error:\n");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-	fprintf(stderr, "[INFO] SSL_connect: TLS session established, cipher: %s.\n", SSL_get_cipher(ssl));
+    SSL_set_fd(ssl, sock_fd);
+    int conn_ret = SSL_connect(ssl);
+    if (conn_ret <= 0) {
+        fprintf(stderr, "[CRIT] SSL_connect: error:\n");
+        ERR_print_errors_fp(stderr);
+        return 1;
+    }
+    fprintf(stderr, "[INFO] SSL_connect: TLS session established, cipher: %s.\n", SSL_get_cipher(ssl));
 
     std::thread s2t (sock_to_tap, tap_fd, ssl);
     std::thread t2s (tap_to_sock, tap_fd, ssl);
