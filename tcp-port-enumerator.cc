@@ -72,7 +72,7 @@ Port* TcpPortEnumerator::GetPort(void) {
 	inet_ntop(AF_INET, &(remote_addr.sin_addr), ip_str, INET_ADDRSTRLEN);
 	fprintf(stderr, "[INFO] TcpPortEnumerator::GetPort: new port: src: %s:%d (fd = %d).\n", ip_str, ntohs(remote_addr.sin_port), client_fd);
 
-	Port *p = new Port(client_fd);
+	TcpPort *p = new TcpPort(client_fd);
 	ports.push_back(p);
 
 	return p;

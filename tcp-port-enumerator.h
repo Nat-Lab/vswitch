@@ -3,6 +3,7 @@
 #define TCP_QUEUE_LEN 16
 
 #include "port-enumerator.h"
+#include "tcp-port.h"
 #include <vector>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -21,7 +22,7 @@ public:
 private:
     int master_fd;
     struct sockaddr_in listen_addr;
-    std::vector<Port *> ports;
+    std::vector<TcpPort *> ports;
     char *this_name;
 };
 
