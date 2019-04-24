@@ -112,7 +112,6 @@ int main (int argc, char **argv) {
 
     bool s = false; 
     bool p = false;
-    bool c = false;
     bool d = false;
 
     char opt;
