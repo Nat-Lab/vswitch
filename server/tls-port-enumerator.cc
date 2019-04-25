@@ -45,7 +45,7 @@ const char *bind_addr, in_port_t bind_port) {
 
 bool TlsPortEnumerator::Start() {
     if (!ssl_ready) {
-        fprintf(stderr, "[CRIT] TlsPortEnumerator::Start: can't start, there was a ssl error.\n", strerror(errno));
+        fprintf(stderr, "[CRIT] TlsPortEnumerator::Start: can't start, there was a ssl error.\n");
         return false;
     }
 
