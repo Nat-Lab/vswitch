@@ -20,6 +20,18 @@
 
 #define MAX_PAYLOAD 65536
 
+typedef struct auth_req_t {
+    uint8_t username_len;
+    uint8_t password_len;
+    char username[32];
+    char password[255];
+} auth_req_t;
+
+typedef struct auth_reply_t {
+    bool ok;
+    char msg[255];
+} auth_reply_t;
+
 typedef struct payload_t {
     uint16_t payload_len;
     uint8_t payload[MAX_PAYLOAD];
@@ -33,7 +45,7 @@ int do_verify (int ok, X509_STORE_CTX *x509_ctx) {
     return ok;
 }
 
-SSL* ssl_init (const char *ca_path, const char *cert_path, const char *key_path, const char *server_cn) {
+SSL* ssl_init (bool user_pass_mode, const char *ca_path, const char *cert_path, const char *key_path, const char *server_cn) {
     SSL_library_init();
     SSL_load_error_strings();
     SSLeay_add_ssl_algorithms();
@@ -41,16 +53,19 @@ SSL* ssl_init (const char *ca_path, const char *cert_path, const char *key_path,
     SSL_METHOD *method = (SSL_METHOD *) TLSv1_2_method();
     SSL_CTX* ctx = SSL_CTX_new(method);
 
-    if (!SSL_CTX_use_certificate_file(ctx, cert_path, SSL_FILETYPE_PEM)) {
-        fprintf(stderr, "[CRIT] SSL_CTX_use_certificate_file() error:\n");
-        ERR_print_errors_fp(stderr);
-        return 0;
+    if (!user_pass_mode) {
+        if (!SSL_CTX_use_certificate_file(ctx, cert_path, SSL_FILETYPE_PEM)) {
+            fprintf(stderr, "[CRIT] SSL_CTX_use_certificate_file() error:\n");
+            ERR_print_errors_fp(stderr);
+            return 0;
+        }
+        if (!SSL_CTX_use_PrivateKey_file(ctx, key_path, SSL_FILETYPE_PEM)) {
+            fprintf(stderr, "[CRIT] SSL_CTX_use_PrivateKey_file() error:\n");
+            ERR_print_errors_fp(stderr);
+            return 0;
+        }
     }
-    if (!SSL_CTX_use_PrivateKey_file(ctx, key_path, SSL_FILETYPE_PEM)) {
-        fprintf(stderr, "[CRIT] SSL_CTX_use_PrivateKey_file() error:\n");
-        ERR_print_errors_fp(stderr);
-        return 0;
-    }
+
     if (!SSL_CTX_load_verify_locations(ctx, ca_path, NULL)) {
         fprintf(stderr, "[CRIT] SSL_CTX_load_verify_locations() error:\n");
         ERR_print_errors_fp(stderr);
@@ -144,7 +159,9 @@ void sock_to_tap (int tap_fd, SSL *ssl) {
 }
 
 void print_help (const char *me) {
-    fprintf (stderr, "usage: %s -s server -p port -n server_name -d device_name -C ca_path -c cert_path -k cert_key_path [-u uid] [-g gid]\n", me);
+    fprintf (stderr, "usage: %s -m mode -s server -p port -n server_name -d device_name -C ca_path -c cert_path/username -k cert_key_path/password [-u uid] [-g gid]\n", me);
+    fprintf (stderr, "where mode := { userpass | cert }\n");
+    
 }
 
 int main (int argc, char **argv) {
@@ -155,6 +172,7 @@ int main (int argc, char **argv) {
     char *cert_key_path = (char *) malloc(PATH_MAX);
     char *server_name = (char *) malloc(64);
     in_port_t server_port = 0;
+    bool user_pass_mode = false;
 
     uid_t uid = 65534;
     gid_t gid = 65534;
@@ -166,9 +184,10 @@ int main (int argc, char **argv) {
     bool d = false;
     bool n = false;
     bool k = false;
+    bool m = false;
 
     char opt;
-    while ((opt = getopt(argc, argv, "s:p:d:u:g:C:c:k:n:")) != -1) {
+    while ((opt = getopt(argc, argv, "m:s:p:d:u:g:C:c:k:n:")) != -1) {
         switch (opt) {
             case 's':
                 s = true;
@@ -204,13 +223,17 @@ int main (int argc, char **argv) {
                 n = true;
                 strncpy(server_name, optarg, 64);
                 break;
+            case 'm':
+                m = true;
+                if (memcmp("userpass", optarg, 8) == 0) user_pass_mode = true;
+                break;
             default:
                 print_help (argv[0]);
                 return 1;
         }
     }
 
-    if (!s || !p || !d || !k || !n || !c || !C) {
+    if (!s || !p || !d || !k || !n || !c || !C || !m) {
         print_help (argv[0]);
         return 1;
     }
@@ -222,7 +245,11 @@ int main (int argc, char **argv) {
     }
     fprintf(stderr, "[INFO] tap_alloc: allocated: %s.\n", tap_name);
 
-    SSL *ssl = ssl_init(ca_path, cert_path, cert_key_path, server_name);
+    if (user_pass_mode) {
+        fprintf(stderr, "[INFO] using user/pass mode.\n");
+    }
+
+    SSL *ssl = ssl_init(user_pass_mode, ca_path, cert_path, cert_key_path, server_name);
     if (ssl == 0) {
         fprintf(stderr, "[CRIT] ssl_init error.\n");
         return 1;
@@ -255,6 +282,41 @@ int main (int argc, char **argv) {
         return 1;
     }
     fprintf(stderr, "[INFO] SSL_connect: TLS session established, cipher: %s.\n", SSL_get_cipher(ssl));
+
+    if (user_pass_mode) {
+        fprintf(stderr, "[INFO] authenticating with server with username '%s'...\n", cert_path);
+        auth_req_t req;
+        memset(&req, 0, sizeof(auth_req_t));
+        strcpy(req.username, cert_path);
+        strcpy(req.password, cert_key_path);
+        req.username_len = strlen(cert_path) + 1;
+        req.password_len = strlen(cert_key_path) + 1;
+        SSL_write(ssl, (void *) &req, sizeof(auth_req_t));
+        
+        auth_reply_t reply;
+        memset(&reply, 0, sizeof(auth_reply_t));
+        int len = SSL_read(ssl, (void *) &reply, sizeof(auth_reply_t));
+
+        if (len < 0) {
+            fprintf(stderr, "[CRIT] error reading auth-reply from server: \n");
+            ERR_print_errors_fp(stderr);
+            return 1;
+        }
+
+        if (len != sizeof(auth_reply_t)) {
+            fprintf(stderr, "[CRIT] invalid auth-reply from server.\n");
+            return 1;
+        }
+
+        if (reply.ok) {
+            fprintf(stderr, "[INFO] successfully authenticated as %s.\n", cert_path);
+            fprintf(stderr, "[INFO] remote: %s\n", reply.msg);
+        } else {
+            fprintf(stderr, "[CRIT] failed to authenticated as %s.\n", cert_path);
+            fprintf(stderr, "[INFO] remote: %s\n", reply.msg);
+            return 1;
+        }
+    }
 
     std::thread s2t (sock_to_tap, tap_fd, ssl);
     std::thread t2s (tap_to_sock, tap_fd, ssl);
