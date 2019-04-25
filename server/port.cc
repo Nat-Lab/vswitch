@@ -17,6 +17,10 @@ ssize_t Port::Write(const uint8_t *buffer, size_t len) {
     return write(port_fd, buffer, len);
 }
 
+bool Port::Open() {
+    return true;
+}
+
 int Port::Close() {
     return close(port_fd);
 }
