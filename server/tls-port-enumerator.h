@@ -1,6 +1,7 @@
 #ifndef TLS_PORT_ENUM_H
 #define TLS_PORT_ENUM_H
 #define TCP_QUEUE_LEN 16
+#define AUTH_TIMEOUT 5000
 
 #include "port-enumerator.h"
 #include "tls-port.h"

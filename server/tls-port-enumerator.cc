@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <poll.h>
 
 TlsPortEnumerator::TlsPortEnumerator (
 const char *ca_path, const char *server_crt, const char *server_key,
@@ -162,12 +163,40 @@ Port* TlsPortEnumerator::GetPort(void) {
             fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: issuer: %s.\n", line);
             OPENSSL_free(line);
         } else {
-            fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: using user-pass mode, waiting for auth....\n");
-            // TODO use poll() w/ timeout on sock_fd to set auth timeout.
+            fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: using user-pass mode, waiting for client to authenticate.\n");
+            struct pollfd pollfds[1];
+            memset(pollfds, 0, sizeof(struct pollfd));
+            pollfds[0].fd = client_fd;
+            pollfds[0].events = POLLIN;
+            int poll_ret = poll(pollfds, 1, AUTH_TIMEOUT);
+
+            if (poll_ret < 0) {
+                fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: lost connection during authentication.\n");
+                SSL_shutdown(ssl);
+                close(client_fd);
+                SSL_free(ssl);
+                continue;
+            }
+
+            if (poll_ret == 0) {
+                fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: client failed to authenticate within %d ms, reject.\n", AUTH_TIMEOUT);
+                struct AuthReply reply;
+                reply.ok = false;
+                sprintf(reply.msg, "authentication timed out.");
+                int ret = SSL_write(ssl, (void *) &reply, sizeof(struct AuthReply));
+                if (ret <= 0) {
+                    fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: failed to reply remote client.\n");
+                }
+                SSL_shutdown(ssl);
+                close(client_fd);
+                SSL_free(ssl);
+                continue;
+            }
+
             struct AuthRequest req;
             int len = SSL_read(ssl, (void *) &req, sizeof(struct AuthRequest));
             if (len <= 0) {
-                fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: lost connection during auth.\n");
+                fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: TLS session interrupted during authentication.\n");
                 SSL_shutdown(ssl);
                 close(client_fd);
                 SSL_free(ssl);
@@ -175,7 +204,7 @@ Port* TlsPortEnumerator::GetPort(void) {
             }
 
             if (len != sizeof(struct AuthRequest)) {
-                fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: invalid auth header.\n");
+                fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: invalid authentication header.\n");
                 SSL_shutdown(ssl);
                 close(client_fd);
                 SSL_free(ssl);
