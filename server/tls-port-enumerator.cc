@@ -5,6 +5,7 @@
 TlsPortEnumerator::TlsPortEnumerator (
 const char *ca_path, const char *server_crt, const char *server_key,
 const char *bind_addr, in_port_t bind_port) {
+    ssl_ready = false;
     SSL_library_init();
     SSL_load_error_strings();
     SSLeay_add_ssl_algorithms();
@@ -31,6 +32,8 @@ const char *bind_addr, in_port_t bind_port) {
         return;
     }
 
+    ssl_ready = true;
+
     memset(&listen_addr, 0, sizeof(struct sockaddr_in));
     listen_addr.sin_family = AF_INET;
     listen_addr.sin_port = htons(bind_port);
@@ -41,6 +44,11 @@ const char *bind_addr, in_port_t bind_port) {
 }
 
 bool TlsPortEnumerator::Start() {
+    if (!ssl_ready) {
+        fprintf(stderr, "[CRIT] TlsPortEnumerator::Start: can't start, there was a ssl error.\n", strerror(errno));
+        return false;
+    }
+
     char ip_str[INET_ADDRSTRLEN];
 
     master_fd = socket(AF_INET, SOCK_STREAM, 0);

@@ -25,6 +25,7 @@ private:
     struct sockaddr_in listen_addr;
     char *this_name;
     std::vector<TlsPort *> ports;
+    bool ssl_ready;
 };
 
 #endif // TLS_PORT_ENUM_H
