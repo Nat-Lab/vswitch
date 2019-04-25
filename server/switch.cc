@@ -75,12 +75,6 @@ void Switch::Listener(Port *port) {
     uint8_t *buffer = (uint8_t *) malloc(65536);
     char* addr_str;
     while ((len = port->Read(buffer, 65535)) > 0) {
-        if (len <= 0) {
-            fprintf(stderr, "[WARN] Switch::Listener: reading from port %d failed, unplug.\n", port->GetId());
-            Unplug(port);
-            return;
-        }
-
         auto eth_hdr = (const struct ether_header *) buffer;
         auto eth_addr = (const struct ether_addr *) eth_hdr->ether_shost;
         FdbEntry new_entry (port, eth_addr);
@@ -98,6 +92,9 @@ void Switch::Listener(Port *port) {
 forward:
         Forward(port, buffer, (size_t) len);
     }
+
+    fprintf(stderr, "[WARN] Switch::Listener: reading from port %d failed, unplug.\n", port->GetId());
+    Unplug(port);
 }
 
 void Switch::EnumeratorHandler(PortEnumerator *pe) {
