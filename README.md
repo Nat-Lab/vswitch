@@ -57,7 +57,7 @@ To connect to the TLS switch extension with `client-tls`, use the following argu
 
 Adding new protocol support to vSwitch is simple. What you need is to implement a `Port` and/or a `PortEnumerator`. The definition of these two interfaces can be found in `server/port-enumerator.h` and `server/port.h`. 
 
-Once you have your Port created, you can use it with vSwitch. The `vswitch` binary is just a CLI wrapper. To create a vSwitch programmatically, create a `Switch` instance, then use `Switch::AddPortEnumerator` or `Switch::Plug` to have `PortEnumerator` or `Port` install to the switch. 
+Once you have your `Port` or `PortEnumerator` created, you can use it with vSwitch. The `vswitch` binary is just a CLI wrapper. To create a vSwitch programmatically, create a `Switch` instance, then use `Switch::Plug` to have `PortEnumerator` or `Port` install to the switch. 
 
 Here's an example that creates a simple vSwitch with TCP and TAP port:
 
