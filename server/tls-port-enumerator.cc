@@ -1,10 +1,12 @@
 #include "tls-port-enumerator.h"
+#include "pam-auth.h"
 #include <arpa/inet.h>
 #include <stdio.h>
+#include <sys/types.h>
 
 TlsPortEnumerator::TlsPortEnumerator (
 const char *ca_path, const char *server_crt, const char *server_key,
-const char *bind_addr, in_port_t bind_port) {
+const char *bind_addr, in_port_t bind_port, enum AuthMode mode) {
     ssl_ready = false;
     SSL_library_init();
     SSL_load_error_strings();
@@ -24,16 +26,19 @@ const char *bind_addr, in_port_t bind_port) {
         return;
     }
 
-    SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, NULL);
+    if (mode == AuthMode::CERTIFICATE) {
+        SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
-    if (!SSL_CTX_load_verify_locations(ssl_ctx, ca_path, NULL)) {
-        fprintf(stderr, "[CRIT] SSL_CTX_load_verify_locations error:\n");
-        ERR_print_errors_fp(stderr);
-        return;
-    }
+        if (!SSL_CTX_load_verify_locations(ssl_ctx, ca_path, NULL)) {
+            fprintf(stderr, "[CRIT] SSL_CTX_load_verify_locations error:\n");
+            ERR_print_errors_fp(stderr);
+            return;
+        }
+    } else SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 
     ssl_ready = true;
 
+    this->mode = mode;
     memset(&listen_addr, 0, sizeof(struct sockaddr_in));
     listen_addr.sin_family = AF_INET;
     listen_addr.sin_port = htons(bind_port);
@@ -146,14 +151,71 @@ Port* TlsPortEnumerator::GetPort(void) {
         }
 
         fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: TLS session established.\n");
-        X509 *cert = SSL_get_peer_certificate(ssl);
-        char *line;
-        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-        fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: subject_name: %s.\n", line);
-        OPENSSL_free(line);
-        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: issuer: %s.\n", line);
-        OPENSSL_free(line);
+
+        if (mode == AuthMode::CERTIFICATE) {
+            X509 *cert = SSL_get_peer_certificate(ssl);
+            char *line;
+            line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+            fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: subject_name: %s.\n", line);
+            OPENSSL_free(line);
+            line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+            fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: issuer: %s.\n", line);
+            OPENSSL_free(line);
+        } else {
+            fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: using user-pass mode, waiting for auth....\n");
+            // TODO use poll() w/ timeout on sock_fd to set auth timeout.
+            struct AuthRequest req;
+            int len = SSL_read(ssl, (void *) &req, sizeof(struct AuthRequest));
+            if (len <= 0) {
+                fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: lost connection during auth.\n");
+                SSL_shutdown(ssl);
+                close(client_fd);
+                SSL_free(ssl);
+                continue;
+            }
+
+            if (len != sizeof(sizeof(struct AuthRequest))) {
+                fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: invalid auth header.\n");
+                SSL_shutdown(ssl);
+                close(client_fd);
+                SSL_free(ssl);
+                continue;
+            }
+
+            uint8_t username_len = req.username_len;
+            uint8_t password_len = req.password_len;
+
+            if (username_len > 32 || password_len > 255) {
+                fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: invalid user/pass length.\n");
+                SSL_shutdown(ssl);
+                close(client_fd);
+                SSL_free(ssl);
+                continue;
+            }
+
+            char *username = (char *) malloc(username_len);
+            memcpy(username, req.username, username_len);
+            char *password = (char *) malloc(password_len);
+            memcpy(password, req.password, password_len);
+
+            fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: username: %s, password: %s.\n", username, password);
+            if (!do_auth(username, password)) {
+                fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: authenticate failed.\n");
+                struct AuthReply reply;
+                reply.ok = false;
+                sprintf(reply.msg, "Authenticate Failed.");
+                SSL_write(ssl, (void *) &reply, sizeof(struct AuthReply));
+                SSL_shutdown(ssl);
+                close(client_fd);
+                SSL_free(ssl);
+                continue;
+            }
+
+            struct AuthReply reply;
+            reply.ok = true;
+            sprintf(reply.msg, "Connected as Port %d", client_fd);
+            SSL_write(ssl, (void *) &reply, sizeof(struct AuthReply));
+        }
 
         TlsPort *p = new TlsPort(ssl, client_fd);
         ports.push_back(p);

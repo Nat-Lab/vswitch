@@ -12,7 +12,7 @@ void do_list_port () {
     fprintf(stderr, "avaliable port types and arguments:\n");
     fprintf(stderr, "port tap (port): arg: --dev dev_name\n");
     fprintf(stderr, "port tcp (port-enum): arg: --bind server_address --port server_port\n");
-    fprintf(stderr, "port tls (port-enum): arg: --ca ca_path --cert cert_path --key cert_key_path --bind server_address --port server_port\n");
+    fprintf(stderr, "port tls (port-enum): arg: --ca ca_path --cert cert_path --key cert_key_path --bind server_address --port server_port --mode {userpass|cert}\n");
 }
 
 void do_help (const char *me) {
@@ -98,6 +98,7 @@ bool do_parse_tls_ports (int argc, char** argv, std::vector<PortEnumerator *> &e
         {"bind", required_argument, 0, 'b'},
         {"port", required_argument, 0, 'p'},
         {"add-port", required_argument, 0, 'A'},
+        {"mode", required_argument, 0, 'm'},
         {0, 0, 0, 0}
     };
 
@@ -106,12 +107,14 @@ bool do_parse_tls_ports (int argc, char** argv, std::vector<PortEnumerator *> &e
     char *cert_path = (char *) malloc(PATH_MAX);
     char *cert_key_path = (char *) malloc(PATH_MAX);
     in_port_t port = 0;
+    TlsPortEnumerator::AuthMode mode = TlsPortEnumerator::AuthMode::CERTIFICATE;
 
     bool C = false;
     bool c = false;
     bool k = false;
     bool b = false;
     bool p = false;
+    bool m = false;
 
     int opt_idx = 0;
     char opt;
@@ -145,15 +148,21 @@ bool do_parse_tls_ports (int argc, char** argv, std::vector<PortEnumerator *> &e
                 p = true;
                 port = atoi(optarg);
                 break;
+            case 'm':
+                m = true;
+                if (memcmp("userpass", optarg, 8) == 0) {
+                    mode = TlsPortEnumerator::AuthMode::USERPASS;
+                } else mode = TlsPortEnumerator::AuthMode::CERTIFICATE;
+                break;
         }
     }
 
 tls_do_check:
-    if (!c || !C || !k || !b || !p) {
+    if (!c || !C || !k || !b || !p || !m) {
         fprintf(stderr, "%s: tls-port-enum: missing arguments.\n", argv[0]);
         return false;
     }
-    TlsPortEnumerator *tls_port_enum = new TlsPortEnumerator (ca_path, cert_path, cert_key_path, bind_addr, port);
+    TlsPortEnumerator *tls_port_enum = new TlsPortEnumerator (ca_path, cert_path, cert_key_path, bind_addr, port, mode);
     enums.push_back(tls_port_enum);
     return true;
 }
