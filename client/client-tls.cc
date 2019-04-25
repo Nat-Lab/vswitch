@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
-
+#include <netdb.h>
 #include <linux/if.h>
 #include <linux/if_tun.h>
 #include <linux/limits.h>
@@ -101,14 +101,21 @@ int tap_alloc (char *dev_name) {
     return fd;
 }
 
-int server_connect (char *addr, in_port_t port) {
-    struct sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(struct sockaddr_in));
+int server_connect (const char *addr, const char *port) {
+    struct addrinfo hints, *result;
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;
+    hints.ai_flags = AI_NUMERICSERV;
 
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(port);
-    int inet_pton_ret = inet_pton(AF_INET, addr, &server_addr.sin_addr);
-    if (inet_pton_ret < 0) return inet_pton_ret;
+    int gai_ret = getaddrinfo(addr, port, &hints, &result);
+    if (gai_ret < 0) {
+        freeaddrinfo(result);
+        return gai_ret;
+    }
+
+    struct sockaddr_in server_addr;
+    memcpy(&server_addr, result->ai_addr, sizeof(struct sockaddr_in));
+    freeaddrinfo(result);
 
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) return fd;
@@ -159,20 +166,20 @@ void sock_to_tap (int tap_fd, SSL *ssl) {
 }
 
 void print_help (const char *me) {
-    fprintf (stderr, "usage: %s -m mode -s server -p port -n server_name -d device_name -C ca_path -c cert_path/username -k cert_key_path/password [-u uid] [-g gid]\n", me);
+    fprintf (stderr, "usage: %s -m mode -s server -p port -d device_name -C ca_path -c cert_path/username -k cert_key_path/password [-n server_name] [-u uid] [-g gid]\n", me);
     fprintf (stderr, "where mode := { userpass | cert }\n");
     fprintf (stderr, "- in cert mode, specify path to certificate with -c and path to key with -k.\n");
     fprintf (stderr, "- in userpass mode, specify username with -c and password with -k.\n");
 }
 
 int main (int argc, char **argv) {
-    char *tap_name = (char *) malloc(IFNAMSIZ);
-    char *server_addr = (char *) malloc(16);
+    char *tap_name = (char *) malloc(64);
+    char *server_addr = (char *) malloc(255);
     char *ca_path = (char *) malloc(PATH_MAX);
     char *cert_path = (char *) malloc(PATH_MAX);
     char *cert_key_path = (char *) malloc(PATH_MAX);
     char *server_name = (char *) malloc(64);
-    in_port_t server_port = 0;
+    char *server_port = (char *) malloc(6);
     bool user_pass_mode = false;
 
     uid_t uid = 65534;
@@ -192,11 +199,11 @@ int main (int argc, char **argv) {
         switch (opt) {
             case 's':
                 s = true;
-                strncpy(server_addr, optarg, 12);
+                strncpy(server_addr, optarg, 255);
                 break;
             case 'p':
                 p = true;
-                server_port = atoi (optarg);
+                strncpy(server_port, optarg, 6);
                 break;
             case 'd':
                 d = true;
@@ -234,7 +241,11 @@ int main (int argc, char **argv) {
         }
     }
 
-    if (!s || !p || !d || !k || !n || !c || !C || !m) {
+    if (!n) {
+        strncpy(server_name, server_addr, 64);
+    }
+
+    if (!s || !p || !d || !k || !c || !C || !m) {
         print_help (argv[0]);
         return 1;
     }
