@@ -5,8 +5,13 @@
 
 void Switch::Plug(Port *port) {
     fprintf(stderr, "[INFO] Switch::Plug: plugging in port %d.\n", port->GetId());
-    ports.push_back(port);
-    listener_threads.push_back(std::thread(&Switch::Listener, this, port));
+    if (port->Open()) {
+        ports.push_back(port);
+        listener_threads.push_back(std::thread(&Switch::Listener, this, port));
+    } else {
+        fprintf(stderr, "[WARN] Switch::Plug: failed to open port %d.\n", port->GetId());
+    }
+    
 }
 
 void Switch::Plug(PortEnumerator *penum) {
