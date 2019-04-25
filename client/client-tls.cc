@@ -313,7 +313,7 @@ int main (int argc, char **argv) {
             fprintf(stderr, "[INFO] successfully authenticated as %s.\n", cert_path);
             fprintf(stderr, "[INFO] remote: %s\n", reply.msg);
         } else {
-            fprintf(stderr, "[CRIT] failed to authenticated as %s.\n", cert_path);
+            fprintf(stderr, "[CRIT] failed to authenticate as %s.\n", cert_path);
             fprintf(stderr, "[INFO] remote: %s\n", reply.msg);
             return 1;
         }
