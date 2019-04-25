@@ -11,9 +11,9 @@ Currently, the following `Port`s and `PortEnumerator`s are available:
 --|--|--
 tap|`port`|`--dev dev_name`
 tcp|`portenum`|`--bind server_address --port server_port`
-tls|`portenum`|`--ca ca_path --cert cert_path --key cert_key_path --bind server_address --port server_port`
+tls|`portenum`|`--ca ca_path --cert cert_path --key cert_key_path --bind server_address --port server_port --mode mode`
 
-The `tap` and `tcp` port are pretty self-explanatory. `tls` is a port that accepts TLS TCP connection. It authenticates the client with CA (i.e., the client needs to have a valid certificate signed by CA). 
+The `tap` and `tcp` port are pretty self-explanatory. `tls` is a port that accepts TLS TCP connection. There are two modes available: `cert` and `userpass`. Cert authenticates the client with CA (i.e., the client needs to have a valid certificate signed by CA), and `userpass` authenticates the client with PAM authentication with username/password pair provided by the client.
 
 The TLS port client, `client-tls` also authenticate server with CA. In addition to that, `client-tls` will also check for the server's common name and will refuse to connect if the common name does not match.
 
@@ -41,16 +41,16 @@ If the build succeeded, you should find vSwitch server & client binaries under `
 
 `./vswitch --help` prints the help message above, `./vswitch --list-ports` lists all available `Port`s and `PortEnumerator`s. Lunching `vswitch` with one or more `--add-port` arguments will start the switch with ports you specified. 
 
-For example, to start a vSwitch that open a TAP interface on vSwitch host with name `tap-vswitch`, and a TLS switch extersion, use the following argument:
+For example, to start a vSwitch that open a TAP interface on vSwitch host with name `tap-vswitch`, and a TLS switch extersion with certificate mode, use the following argument:
 
 ```
-# ./vswitch --add-port tap --dev tap-vswitch --add-port tls --ca certs/ca.crt --cert certs/server.crt --key certs/server.key --bind 0.0.0.0 --port 1443
+# ./vswitch --add-port tap --dev tap-vswitch --add-port tls --ca certs/ca.crt --cert certs/server.crt --key certs/server.key --bind 0.0.0.0 --port 1443 --mode cert
 ```
 
-To connect to the TLS switch extension with `client-tls`, use the following argument (assume server is at `172.30.0.1`): 
+To connect to the TLS switch extension with `client-tls`, use the following argument (assume server is at `172.30.0.1` and has CN `server-name.local`): 
 
 ```
-# ./client-tls -d tap-client -s 172.30.0.1 -p 1443 -n server-name.local -C certs/ca.crt -c certs/client.crt -k certs/client.key
+# ./client-tls -d tap-client -s 172.30.0.1 -p 1443 -n server-name.local -C certs/ca.crt -c certs/client.crt -k certs/client.key -m cert
 ```
 
 ### Development
