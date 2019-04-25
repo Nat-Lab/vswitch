@@ -1,6 +1,6 @@
 CFLAGS=-std=c++11 -O3 -Wall
 LDLIBS=-lpthread -lssl -lcrypto -lpam
-OBJS_SERVER=server/fdb-entry.o server/port.o server/switch.o server/tap-port.o server/tcp-port.o server/tcp-port-enumerator.o server/tls-port.o server/tls-port-enumerator.o server/vswitch.o server/pam-auth.o
+OBJS_SERVER=server/fdb-entry.o server/port.o server/switch.o server/tap-port.o server/tcp-port.o server/tcp-port-enumerator.o server/tls-port.o server/tls-port-enumerator.o server/eoip-port.o server/vswitch.o server/pam-auth.o
 TARGETS=bin/vswitch bin/client-tcp bin/client-tls
 CC=g++
 
