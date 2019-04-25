@@ -4,8 +4,8 @@
 #include <netinet/ether.h>
 
 void Switch::Plug(Port *port) {
-    fprintf(stderr, "[INFO] Switch::Plug: plugging in port %d.\n", port->GetId());
     if (port->Open()) {
+        fprintf(stderr, "[INFO] Switch::Plug: plugging in port %d.\n", port->GetId());
         ports.push_back(port);
         listener_threads.push_back(std::thread(&Switch::Listener, this, port));
     } else {
