@@ -142,12 +142,12 @@ Port* TlsPortEnumerator::GetPort(void) {
         }
 
         if (accept_ret < 0) {
-            fprintf(stderr, "[CRIT] TlsPortEnumerator::GetPort: SSL_accept() fatal error:\n");
+            fprintf(stderr, "[CRIT] TlsPortEnumerator::GetPort: SSL_accept() error:\n");
             ERR_print_errors_fp(stderr);
             SSL_shutdown(ssl);
             close(client_fd);
             SSL_free(ssl);
-            return 0;
+            continue;
         }
 
         fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: TLS session established.\n");
