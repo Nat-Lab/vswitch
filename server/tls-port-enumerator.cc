@@ -174,7 +174,7 @@ Port* TlsPortEnumerator::GetPort(void) {
                 continue;
             }
 
-            if (len != sizeof(sizeof(struct AuthRequest))) {
+            if (len != sizeof(struct AuthRequest)) {
                 fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: invalid auth header.\n");
                 SSL_shutdown(ssl);
                 close(client_fd);
@@ -198,23 +198,30 @@ Port* TlsPortEnumerator::GetPort(void) {
             char *password = (char *) malloc(password_len);
             memcpy(password, req.password, password_len);
 
-            fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: username: %s, password: %s.\n", username, password);
+            fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: authenticating user: %s.\n", username);
             if (!do_auth(username, password)) {
                 fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: authenticate failed.\n");
                 struct AuthReply reply;
                 reply.ok = false;
-                sprintf(reply.msg, "Authenticate Failed.");
-                SSL_write(ssl, (void *) &reply, sizeof(struct AuthReply));
+                sprintf(reply.msg, "invalid username or password.");
+                int ret = SSL_write(ssl, (void *) &reply, sizeof(struct AuthReply));
+                if (ret <= 0) {
+                    fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: failed to reply remote client.\n");
+                }
                 SSL_shutdown(ssl);
                 close(client_fd);
                 SSL_free(ssl);
                 continue;
             }
+            fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: authenticated.\n");
 
             struct AuthReply reply;
             reply.ok = true;
-            sprintf(reply.msg, "Connected as Port %d", client_fd);
-            SSL_write(ssl, (void *) &reply, sizeof(struct AuthReply));
+            sprintf(reply.msg, "welcome %s, you are connected to port %d.", username, client_fd);
+            int ret = SSL_write(ssl, (void *) &reply, sizeof(struct AuthReply));
+            if (ret <= 0) {
+                fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: failed to reply remote client.\n");
+            }
         }
 
         TlsPort *p = new TlsPort(ssl, client_fd);
