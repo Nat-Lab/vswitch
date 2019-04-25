@@ -71,10 +71,10 @@ int main (int argc, char **argv) {
     TapPort tap ("dev-vswitch");
     TcpPortEnumerator tcp ("0.0.0.0", 1234);
 
-    // add TcpPortEnumerator to switch
-    s.AddPortEnumerator(&tcp);
+    // plug tcp extersion switch into main switch
+    s.Plug(&tcp);
 
-    // plug tap interface into switch
+    // plug tap interface into main switch
     s.Plug(&tap);
 
     // join the switching thread.

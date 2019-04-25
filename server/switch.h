@@ -15,11 +15,11 @@ public:
     // plug a port into switch
     void Plug(Port *port);
 
+    // add a port enumerator to switch
+    void Plug(PortEnumerator *penum);
+
     // unplug a port from switch
     void Unplug(Port *port);
-
-    // add a port enumerator to switch
-    void AddPortEnumerator(PortEnumerator *penum);
 
     // unplug all ports & stop
     void Shutdown();
@@ -39,6 +39,7 @@ private:
     std::vector<std::thread> listener_threads;
     std::vector<std::thread> enum_threads;
     std::vector<PortEnumerator *> enums;
+    std::vector<Port *> ports;
     std::vector<FdbEntry> fdb;
     std::mutex mtx;
 };

@@ -207,7 +207,7 @@ int main (int argc, char** argv) {
 
     Switch sw;
 
-    for (auto &e : port_enums) sw.AddPortEnumerator(e);
+    for (auto &e : port_enums) sw.Plug(e);
     for (auto &p : ports) sw.Plug(p);
 
     sw.Join();
