@@ -9,13 +9,16 @@ Currently, the following `Port`s and `PortEnumerator`s are available:
 
 |Name|Type|Arguments|
 --|--|--
+eoip|`port`|`--local local_addr --peer peer_addr --id tunnel_id`
 tap|`port`|`--dev dev_name`
 tcp|`portenum`|`--bind server_address --port server_port`
 tls|`portenum`|`--ca ca_path --cert cert_path --key cert_key_path --bind server_address --port server_port --mode mode`
 
-The `tap` and `tcp` port are pretty self-explanatory. `tls` is a port that accepts TLS TCP connection. There are two modes available: `cert` and `userpass`. Cert authenticates the client with CA (i.e., the client needs to have a valid certificate signed by CA), and `userpass` authenticates the client with PAM authentication with username/password pair provided by the client.
+`tls` is a port that accepts TLS TCP connection. There are two modes available: `cert` and `userpass`. Cert authenticates the client with CA (i.e., the client needs to have a valid certificate signed by CA), and `userpass` authenticates the client with PAM authentication with username/password pair provided by the client.
 
 The TLS port client, `client-tls` also authenticate server with CA. In addition to that, `client-tls` will also check for the server's common name and will refuse to connect if the common name does not match.
+
+The other ports do what you expect them to do. Their argument should be pretty self-explanatory.
 
 ### Installation
 
