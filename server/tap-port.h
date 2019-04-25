@@ -8,6 +8,7 @@ public:
     TapPort(const char *dev_name);
     ssize_t Read(uint8_t *buffer, size_t len);
     ssize_t Write(const uint8_t *buffer, size_t len);
+    bool Open();
     int Close();
     int GetId(void) const;
     const char* GetTapName(void) const;
