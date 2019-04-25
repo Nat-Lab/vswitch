@@ -161,7 +161,8 @@ void sock_to_tap (int tap_fd, SSL *ssl) {
 void print_help (const char *me) {
     fprintf (stderr, "usage: %s -m mode -s server -p port -n server_name -d device_name -C ca_path -c cert_path/username -k cert_key_path/password [-u uid] [-g gid]\n", me);
     fprintf (stderr, "where mode := { userpass | cert }\n");
-    
+    fprintf (stderr, "- in cert mode, specify path to certificate with -c and path to key with -k.\n");
+    fprintf (stderr, "- in userpass mode, specify username with -c and password with -k.\n");
 }
 
 int main (int argc, char **argv) {
