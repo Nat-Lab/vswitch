@@ -85,8 +85,6 @@ ssize_t EoipPort::Read(uint8_t *buffer, size_t outbuf_len) {
         }
 
         if (((struct sockaddr_in *) &peer_saddr)->sin_addr.s_addr != peer_addr.sin_addr.s_addr) {
-            inet_ntop(AF_INET, &(peer_saddr.sin_addr), ip_str, INET_ADDRSTRLEN);
-            fprintf(stderr, "[WARN] EoipPort::Read: got packet from invalid source: %s\n", ip_str);
             continue;
         }
 
