@@ -228,7 +228,13 @@ Port* TlsPortEnumerator::GetPort(void) {
             memcpy(password, req.password, password_len);
 
             fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: authenticating user: %s.\n", username);
-            if (!do_auth(username, password)) {
+            bool auth_rslt = do_auth(username, password);
+            memset(username, 0, username_len);
+            memset(password, 0, password_len);
+            free(username);
+            free(password);
+
+            if (!auth_rslt) {
                 fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: authenticate failed.\n");
                 struct AuthReply reply;
                 reply.ok = false;
@@ -246,7 +252,7 @@ Port* TlsPortEnumerator::GetPort(void) {
 
             struct AuthReply reply;
             reply.ok = true;
-            sprintf(reply.msg, "welcome %s, you are connected to port %d.", username, client_fd);
+            sprintf(reply.msg, "welcome, you are connected to port %d.", client_fd);
             int ret = SSL_write(ssl, (void *) &reply, sizeof(struct AuthReply));
             if (ret <= 0) {
                 fprintf(stderr, "[WARN] TlsPortEnumerator::GetPort: failed to reply remote client.\n");
@@ -267,4 +273,5 @@ const char* TlsPortEnumerator::GetName(void) {
 
 TlsPortEnumerator::~TlsPortEnumerator() {
     Stop();
+    free(this_name);
 }
