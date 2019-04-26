@@ -2,6 +2,8 @@
 
 static int do_conv (int num_msg, const struct pam_message **msgs, struct pam_response **resp, void *password_ptr) {
     char *pass = (char *) malloc(strlen((char *) password_ptr) + 1);
+    if (!pass) return PAM_BUF_ERR;
+
     strcpy(pass, (char *) password_ptr);
 
     const struct pam_message *m = *msgs;
