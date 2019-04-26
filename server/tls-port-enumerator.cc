@@ -226,6 +226,7 @@ Port* TlsPortEnumerator::GetPort(void) {
             memcpy(username, req.username, username_len);
             char *password = (char *) malloc(password_len);
             memcpy(password, req.password, password_len);
+            memset(&req, 0, sizeof(struct AuthRequest));
 
             fprintf(stderr, "[INFO] TlsPortEnumerator::GetPort: authenticating user: %s.\n", username);
             bool auth_rslt = do_auth(username, password);
