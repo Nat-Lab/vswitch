@@ -53,7 +53,6 @@ void Switch::Forward(Port *src_port, const uint8_t *buffer, size_t buf_len) {
         mtx.unlock();
         return;
     }
-    mtx.unlock();
 
     mtx.lock();
     auto fdb_it = fdb.begin();
