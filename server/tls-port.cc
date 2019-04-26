@@ -68,6 +68,7 @@ int TlsPort::GetId(void) const {
 }
 
 TlsPort::~TlsPort() {
-    delete send_buffer;
+    free(send_buffer);
+    SSL_free(ssl);
     Close();
 }
