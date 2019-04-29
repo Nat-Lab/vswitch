@@ -12,7 +12,11 @@ const char *bind_addr, in_port_t bind_port, enum AuthMode mode) {
     SSL_library_init();
     SSL_load_error_strings();
     SSLeay_add_ssl_algorithms();
-    auto ssl_method = (SSL_METHOD *) TLSv1_2_method();
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    auto ssl_method = TLSv1_2_method();
+#else
+    auto ssl_method = (SSL_METHOD *) TLS_method();
+#endif
     ssl_ctx = SSL_CTX_new(ssl_method);
 
     if (!SSL_CTX_use_certificate_file(ssl_ctx, server_crt, SSL_FILETYPE_PEM)) {

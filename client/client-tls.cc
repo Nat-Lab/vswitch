@@ -50,7 +50,11 @@ SSL* ssl_init (bool user_pass_mode, const char *ca_path, const char *cert_path, 
     SSL_load_error_strings();
     SSLeay_add_ssl_algorithms();
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_METHOD *method = (SSL_METHOD *) TLSv1_2_method();
+#else
+    SSL_METHOD *method = (SSL_METHOD *) TLS_method();
+#endif
     SSL_CTX* ctx = SSL_CTX_new(method);
 
     if (!user_pass_mode) {
