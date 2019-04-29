@@ -1,4 +1,5 @@
 #include "tls-port.h"
+#include <string.h>
 
 TlsPort::TlsPort (SSL *ssl, int id) {
     this->id = id;
