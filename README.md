@@ -22,12 +22,12 @@ The other ports do what you expect them to do. Their argument should be pretty s
 
 ### Installation
 
-Dependency: `libssl`
+Dependency: `libssl`, `libpam`
 
 Download and build vSwitch with the following command:
 
 ```
-$ git clone https://github.com/magicnat/vswitch
+$ git clone https://github.com/nat-lab/vswitch
 $ cd vswitch
 $ make -j
 ```
