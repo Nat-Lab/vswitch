@@ -7,6 +7,8 @@
 Eoip6Port::Eoip6Port(uint16_t tunnel_id, const char *bind_address, const char *peer_address) {
     this_tid = tunnel_id;
     memset(&this_bind, 0, sizeof(struct sockaddr_in6));
+    this_bind.sin6_family = AF_INET6;
+    this_bind.sin6_port = htons(PROTO_EOIP6);
     memset(&peer_addr, 0, sizeof(struct sockaddr_in6));
     memset(&this_header, 0, sizeof(struct Eoip6Header));
     this->bind_address = (char *) malloc(strlen(bind_address) + 1);
@@ -19,8 +21,10 @@ Eoip6Port::Eoip6Port(uint16_t tunnel_id, const char *bind_address, const char *p
 }
 
 bool Eoip6Port::Open() {
+    fprintf(stderr, "[INFO] Eoip6Port::Open: spinning up...\n");
+
     if (this_tid > 4095) {
-        fprintf(stderr, "[CRIT] Eoip6Port::Open: invalid tunnel id.");
+        fprintf(stderr, "[CRIT] Eoip6Port::Open: invalid tunnel id.\n");
         return false;
     }
 
