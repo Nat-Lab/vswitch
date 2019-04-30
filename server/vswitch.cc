@@ -3,6 +3,7 @@
 #include "port-enumerator.h"
 
 #include "eoip-port.h"
+#include "eoip6-port.h"
 #include "tap-port.h"
 #include "tcp-port-enumerator.h"
 #include "tls-port-enumerator.h"
@@ -12,6 +13,7 @@
 void do_list_port () {
     fprintf(stderr, "avaliable port types and arguments:\n");
     fprintf(stderr, "port eoip (port): arg: --local local_addr --peer peer_addr --id tunnel_id\n");
+    fprintf(stderr, "port eoip6 (port): arg: --local local_addr --peer peer_addr --id tunnel_id\n");
     fprintf(stderr, "port tap (port): arg: --dev dev_name\n");
     fprintf(stderr, "port tcp (port-enum): arg: --bind server_address --port server_port\n");
     fprintf(stderr, "port tls (port-enum): arg: --ca ca_path --cert cert_path --key cert_key_path --bind server_address --port server_port --mode {userpass|cert}\n");
@@ -74,6 +76,62 @@ eoip_do_check:
     }
 
     EoipPort *eoip = new EoipPort (tid, local_addr, peer_addr);
+    ports.push_back(eoip);
+
+    return true;
+}
+
+bool do_parse_eoip6_port (int argc, char** argv, std::vector<Port *> &ports) {
+    static struct option eoip_options[] = {
+        {"local", required_argument, 0, 'l'},
+        {"peer", required_argument, 0, 'p'},
+        {"id", required_argument, 0, 'i'},
+        {"add-port", required_argument, 0, 'A'},
+        {0, 0, 0, 0}
+    };
+
+    char *local_addr = (char *) malloc(17);
+    char *peer_addr = (char *) malloc(17);
+    uint16_t tid = 0;
+
+    bool l = false;
+    bool i = false;
+    bool p = false;
+
+    int opt_idx = 0;
+    char opt;
+    while ((opt = getopt_long(argc, argv, "l:p:i:", eoip_options, &opt_idx)) >= 0) {
+        switch (opt) {
+            case -1:
+                goto eoip6_do_check;
+            case 'A':
+                optind -= 2;
+                goto eoip6_do_check;
+            case ':':
+            case '?':
+                return false;
+            case 'l':
+                l = true;
+                strncpy(local_addr, optarg, 17);
+                break;
+            case 'p':
+                p = true;
+                strncpy(peer_addr, optarg, 17);
+                break;
+            case 'i':
+                i = true;
+                tid = atoi(optarg);
+                break;
+        }
+    }
+
+eoip6_do_check:
+    if (!l || !i || !p) {
+        fprintf(stderr, "%s: eoip6-port: missing arguments.\n", argv[0]);
+        return false;
+    }
+
+    Eoip6Port *eoip = new Eoip6Port (tid, local_addr, peer_addr);
     ports.push_back(eoip);
 
     return true;
@@ -240,19 +298,23 @@ int main (int argc, char** argv) {
     char opt;
     while ((opt = getopt_long(argc, argv, "a:", main_options, &opt_idx)) >= 0) {
         if (opt == 'a') {
-            if (memcmp("eoip", optarg, 4) == 0) {
+            if (strcmp("eoip", optarg) == 0) {
                 if (!do_parse_eoip_port(argc, argv, ports)) return 1;
                 continue;
             }
-            if (memcmp("tap", optarg, 3) == 0) {
+            if (strcmp("eoip6", optarg) == 0) {
+                if (!do_parse_eoip6_port(argc, argv, ports)) return 1;
+                continue;
+            }
+            if (strcmp("tap", optarg) == 0) {
                 if (!do_parse_tap_port(argc, argv, ports)) return 1;
                 continue;
             }
-            if (memcmp("tls", optarg, 3) == 0) {
+            if (strcmp("tls", optarg) == 0) {
                 if (!do_parse_tls_ports(argc, argv, port_enums)) return 1;
                 continue;
             }
-            if (memcmp("tcp", optarg, 3) == 0) {
+            if (strcmp("tcp", optarg) == 0) {
                 if (!do_parse_tcp_ports(argc, argv, port_enums)) return 1;
                 continue;
             }
