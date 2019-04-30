@@ -10,6 +10,7 @@ Currently, the following `Port`s and `PortEnumerator`s are available:
 |Name|Type|Arguments|
 --|--|--
 eoip|`port`|`--local local_addr --peer peer_addr --id tunnel_id`
+eoip6|`port`|`--local local_addr --peer peer_addr --id tunnel_id`
 tap|`port`|`--dev dev_name`
 tcp|`portenum`|`--bind server_address --port server_port`
 tls|`portenum`|`--ca ca_path --cert cert_path --key cert_key_path --bind server_address --port server_port --mode mode`
