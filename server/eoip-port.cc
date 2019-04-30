@@ -25,6 +25,7 @@ EoipPort::EoipPort(uint16_t tunnel_id, const char *bind_address, const char *pee
 EoipPort::~EoipPort() {
     Close();
     delete bind_address;
+    delete peer_address;
     delete read_buf;
     delete write_buf;
 }
